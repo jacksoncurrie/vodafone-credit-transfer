@@ -57,7 +57,7 @@ namespace VodafoneCreditTransfer.Controllers
                 FROM `{nameof(Test)}`
                 WHERE `{nameof(Test.TestId)}` = @Id
             "; 
-            var result = await _dapperService.GetAsync<Test>(query, null);
+            var result = await _dapperService.GetAsync<Test>(query, dbparams);
 
             // Return not found if no result
             if (result == default)
@@ -68,7 +68,7 @@ namespace VodafoneCreditTransfer.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<Test>> PostTest(Test testItem)
+        public async Task<ActionResult<Test>> PostTest([FromBody] Test testItem)
         {
             // Add parameters to bind
             var dbparams = new DynamicParameters();
@@ -82,19 +82,21 @@ namespace VodafoneCreditTransfer.Controllers
                     `{nameof(Test.TestName)}`,
                     `{nameof(Test.TestDate)}`,
                     `{nameof(Test.TestCheck)}`
-                ) VALUES (@Name, @Date, @Check)
+                ) VALUES (@Name, @Date, @Check);
+                SELECT LAST_INSERT_ID();
             ";
-            var result = await _dapperService.InsertAsync<Test>(query, dbparams);
+            var result = await _dapperService.InsertAsync<int>(query, dbparams);
+            testItem.TestId = result;
 
             // Log the insert becuase it is important
-            _logger.LogInformation($"{nameof(Test)} item with {nameof(Test.TestId)} '{result.TestId}' was inserted");
+            _logger.LogInformation($"{nameof(Test)} item with {nameof(Test.TestId)} '{testItem.TestId}' was inserted");
 
             // Return the created at action for the new item inserted
-            return CreatedAtAction(nameof(PostTest), new { id = result.TestId }, result);
+            return CreatedAtAction(nameof(PostTest), new { id = testItem.TestId }, testItem);
         }
 
         [HttpPut("{id}")]
-        public async Task<ActionResult> PutTest(int id, Test testItem)
+        public async Task<IActionResult> PutTest(int id, [FromBody] Test testItem)
         {
             // Return bad request if IDs do not match
             if (id != testItem.TestId)
@@ -102,7 +104,7 @@ namespace VodafoneCreditTransfer.Controllers
 
             // Add parameters to bind
             var dbparams = new DynamicParameters();
-            dbparams.Add("Id", testItem.TestName, DbType.Int32);
+            dbparams.Add("Id", testItem.TestId, DbType.Int32);
             dbparams.Add("Name", testItem.TestName, DbType.String);
             dbparams.Add("Date", testItem.TestDate, DbType.DateTime);
             dbparams.Add("Check", testItem.TestCheck, DbType.Boolean);
@@ -115,10 +117,10 @@ namespace VodafoneCreditTransfer.Controllers
                     `{nameof(Test.TestCheck)}` = @Check
                 WHERE `{nameof(Test.TestId)}` = @Id
             ";
-            var result = await _dapperService.UpdateAsync<Test>(query, dbparams);
+            var result = await _dapperService.ExecuteAsync(query, dbparams);
 
             // Return not found if no result
-            if (result == default)
+            if (result == 0)
                 return NotFound();
 
             // Log the update becuase it is important
@@ -129,7 +131,7 @@ namespace VodafoneCreditTransfer.Controllers
         }
 
         [HttpDelete("{id}")]
-        public async Task<ActionResult> DeleteTest(int id)
+        public async Task<IActionResult> DeleteTest(int id)
         {
             // Add parameters to bind
             var dbparams = new DynamicParameters();
