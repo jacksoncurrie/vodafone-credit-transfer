@@ -1,12 +1,10 @@
-﻿using System;
-
-namespace VodafoneCreditTransfer.Models
+﻿namespace VodafoneCreditTransfer.Models
 {
-    public class Test
+    public class Test_Table
     {
-        public int TestId { get; set; }
-        public string TestName { get; set; }
-        public DateTime TestDate { get; set; }
-        public bool TestCheck { get; set; }
+        public string One1 { get; set; }
+        public string Two2 { get; set; }
+        public string Three3 { get; set; }
+        public string Four4 { get; set; }
     }
 }
